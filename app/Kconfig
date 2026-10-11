@@ -1,0 +1,85 @@
+# Custom LED subsystem Kconfig
+#
+# Symbols are prefixed with MY_LED_ to avoid clashing with Zephyr's own
+# CONFIG_LED / CONFIG_LED_* symbols.
+
+menuconfig MY_LED
+	bool "LED Subsystem"
+	default y
+	help
+	  Enable the custom LED subsystem.
+
+if MY_LED
+
+# ---------------------------------------------------------------------------
+# Blink sleep time (choice -> shows as "LED blink sleep time (1s (medium))")
+# ---------------------------------------------------------------------------
+choice MY_LED_BLINK_SLEEP
+	prompt "LED blink sleep time"
+	default MY_LED_BLINK_SLEEP_MEDIUM
+	help
+	  Select how long the LED thread sleeps between blinks.
+
+config MY_LED_BLINK_SLEEP_FAST
+	bool "500ms (fast)"
+
+config MY_LED_BLINK_SLEEP_MEDIUM
+	bool "1s (medium)"
+
+config MY_LED_BLINK_SLEEP_SLOW
+	bool "2s (slow)"
+
+endchoice
+
+# Derived numeric value for use in C code (not user-visible)
+config MY_LED_BLINK_SLEEP_MS
+	int
+	default 500  if MY_LED_BLINK_SLEEP_FAST
+	default 1000 if MY_LED_BLINK_SLEEP_MEDIUM
+	default 2000 if MY_LED_BLINK_SLEEP_SLOW
+
+# ---------------------------------------------------------------------------
+# Advanced settings
+# ---------------------------------------------------------------------------
+menuconfig MY_LED_ADVANCED
+	bool "Advanced LED settings"
+	help
+	  Show advanced LED tuning options.
+
+if MY_LED_ADVANCED
+
+config MY_LED_BRIGHTNESS
+	int "LED brightness (0-100)"
+	range 0 100
+	default 100
+	help
+	  LED brightness as a percentage.
+
+config MY_LED_FADE_DURATION_MS
+	int "LED fade duration (ms)"
+	range 0 60000
+	default 500
+	help
+	  Duration of the fade in/out effect in milliseconds.
+
+menu "Expert settings"
+
+config MY_LED_DEBUG
+	bool "Enable LED debugging"
+	help
+	  Enable verbose debug logging for the LED subsystem.
+
+config MY_LED_CUSTOM_PATTERN
+	bool "Custom blink pattern"
+	help
+	  Use a user-defined blink pattern instead of a fixed interval.
+
+endmenu # Expert settings
+
+endif # MY_LED_ADVANCED
+
+endif # MY_LED
+
+# ... all the MY_LED menuconfig content ...
+
+source "Kconfig.zephyr"
