@@ -1,0 +1,11 @@
+/*
+ * Alias app-led -> the board's led0 node.
+ * On blackpill_f401ce, led0 is the user LED (PC13, active low) with label
+ * "user_led". An alias can't point at another alias, so we reference the
+ * node's label directly.
+ */
+/ {
+	aliases {
+		app-led = &user_led;
+	};
+};
