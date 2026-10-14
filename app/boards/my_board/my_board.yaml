@@ -1,0 +1,15 @@
+identifier: my_board
+name: My custom board
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported:
+  - counter
+  - spi
+  - i2c
+  - uart
+  - pwm
+  - adc
+vendor: none
