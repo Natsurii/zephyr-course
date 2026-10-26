@@ -8,4 +8,18 @@
 	aliases {
 		app-led = &user_led;
 	};
+
+	/*
+	 * Instantiate the custom LED sensor driver on the board's user LED.
+	 *
+	 * "callibration" is a required binding property; it is fetched in the
+	 * driver with DT_INST_PROP() and used as the number of writes per sample.
+	 */
+	led_sensor: led_sensor {
+		compatible = "our,driver";
+		gpios = <&gpioc 13 GPIO_ACTIVE_LOW>;
+		callibration = <100>;
+		label = "User LED";
+		status = "okay";
+	};
 };
