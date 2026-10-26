@@ -1,0 +1,40 @@
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  On-board LED exposed through the Zephyr Sensor API.
+
+  sensor_sample_fetch() reads the current pin level into the driver data and
+  sensor_channel_get() reports it through SENSOR_CHAN_PROX, driving the pin.
+  Being a sensor device it needs no bus; the GPIO is taken from the node.
+
+  Example:
+
+    led_sensor: led_sensor {
+        compatible = "our,driver";
+        gpios = <&gpioc 13 GPIO_ACTIVE_LOW>;
+        status = "okay";
+    };
+
+compatible: "our,driver"
+
+include: sensor-device.yaml
+
+properties:
+  gpios:
+    type: phandle-array
+    required: true
+    description: |
+      The GPIO connected to the LED. The flags must describe the signal as it
+      is presented to the LED (usually GPIO_ACTIVE_LOW for on-board LEDs wired
+      to VDD through a resistor).
+
+  callibration:
+    type: int
+    required: true
+    description: |
+      Number of GPIO writes the driver performs per LED update. Only used to
+      show how a property is fetched with DT_INST_PROP().
+
+  label:
+    type: string
+    description: Human readable name of the LED.

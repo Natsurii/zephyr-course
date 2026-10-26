@@ -1,0 +1,16 @@
+# LED sensor driver configuration options
+
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig OUR_DRIVER
+	bool "Our Custom Driver (LED sensor)"
+	default y
+	depends on DT_HAS_OUR_DRIVER_ENABLED # Only if HW is present in the DT
+	select GPIO                           # Auto-pulls dependencies
+	select SENSOR
+	help
+	  Enable the custom sensor driver that drives an on-board LED.
+
+	  sensor_sample_fetch() samples the pin level and sensor_channel_get()
+	  turns the LED on or off accordingly. The extra API our_driver_toggle()
+	  flips the LED and counts the toggles.
