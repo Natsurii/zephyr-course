@@ -30,6 +30,24 @@ modules/led_sensor/
 `callibration` is a required devicetree property fetched with
 `DT_INST_PROP()`; it controls how many GPIO writes are performed per update.
 
+## Extension API (home task 2)
+
+The Sensor API has no write entry point, so the module also publishes its own
+API struct. `struct our_driver_api` embeds `struct sensor_driver_api` as its
+first member and adds a `toggle` hook, which keeps the standard sensor slots
+untouched while still letting the extension resolve through `dev->api`:
+
+```c
+#include <our_drivers/our_driver.h>
+
+our_driver_toggle(dev);                       /* flips the LED, bumps counter */
+sensor_channel_get(dev, (enum sensor_channel)OUR_DRIVER_CHAN_TOGGLE_COUNT, &val);
+```
+
+`toggle` writes the pin first and only then updates `data->sampled` and
+`data->toggle_count`, so a failed GPIO write leaves the driver state consistent.
+The app drives a heartbeat at `CONFIG_APP_HEARTBEAT_PERIOD_MS` (app `Kconfig`).
+
 ## Wiring
 
 - `app/CMakeLists.txt` appends the module to `ZEPHYR_EXTRA_MODULES`.

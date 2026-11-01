@@ -123,53 +123,51 @@ static int our_driver_channel_get(const struct device *dev, enum sensor_channel 
 }
 
 /*
- * Custom extension API, routed through the standard attr_get slot so the
- * driver stays a plain sensor device. Application code calls the public
- * our_driver_toggle() wrapper below.
+ * Task 2: custom extension API.
+ *
+ * The Sensor API has no "write" entry point, so the driver exposes its own
+ * opaque API struct in the public header. The standard sensor slots stay
+ * untouched and our_driver_toggle() is reached through the device's api
+ * pointer exactly like any in-tree driver extension.
  */
-static int our_driver_attr_get(const struct device *dev, enum sensor_channel chan,
-			       enum sensor_attribute attr, struct sensor_value *val)
-{
-	struct our_driver_data *data = dev->data;
-	int ret;
-
-	ARG_UNUSED(chan);
-
-	if (val == NULL) {
-		return -EINVAL;
-	}
-
-	switch (attr) {
-	case SENSOR_ATTR_GAIN:
-		/* Toggle the LED and report the new toggle counter. */
-		ret = our_driver_internal_write(dev, data->sampled == 0U);
-		if (ret < 0) {
-			return ret;
-		}
-
-		data->sampled = (data->sampled == 0U) ? 1U : 0U;
-		data->toggle_count++;
-
-		val->val1 = (int32_t)data->toggle_count;
-		val->val2 = 0;
-		return 0;
-	default:
-		return -ENOTSUP;
-	}
-}
-
 int our_driver_toggle(const struct device *dev)
 {
-	struct sensor_value val;
+	/*
+	 * A sensor driver only holds a const struct device *. The api pointer is
+	 * immutable after init, so bending the const away for the call is safe.
+	 */
+	const struct our_driver_api *api = (const struct our_driver_api *)dev->api;
 
-	return sensor_attr_get(dev, SENSOR_CHAN_PROX, SENSOR_ATTR_GAIN, &val);
+	return api->toggle(dev);
+}
+
+static int our_driver_toggle_impl(const struct device *dev)
+{
+	struct our_driver_data *data = dev->data;
+	uint8_t next = (data->sampled == 0U) ? 1U : 0U;
+	int ret;
+
+	/* Drive the pin first: only a successful write becomes the new state. */
+	ret = our_driver_internal_write(dev, next != 0U);
+	if (ret < 0) {
+		LOG_ERR("write failed (%d), state unchanged", ret);
+		return ret;
+	}
+
+	data->sampled = next;
+	data->toggle_count++;
+
+	LOG_DBG("toggled to %u (count=%u)", next, data->toggle_count);
+	return 0;
 }
 
 /* Registered API table: standard sensor entry points plus the custom one. */
-static DEVICE_API(sensor, our_driver_api) = {
-	.sample_fetch = our_driver_sample_fetch,
-	.channel_get = our_driver_channel_get,
-	.attr_get = our_driver_attr_get,
+static const struct our_driver_api our_driver_api = {
+	.sensor = {
+		.sample_fetch = our_driver_sample_fetch,
+		.channel_get = our_driver_channel_get,
+	},
+	.toggle = our_driver_toggle_impl,
 };
 
 static int our_driver_init(const struct device *dev)
@@ -182,7 +180,7 @@ static int our_driver_init(const struct device *dev)
 		return -ENODEV;
 	}
 
-	/* Start from a known state: sampled level mirrors the pin, LED off. */
+	/* Start from the real pin level so toggle() flips instead of guessing. */
 	if (our_driver_internal_read(dev, &data->sampled) < 0) {
 		return -EIO;
 	}
