@@ -14,3 +14,12 @@ menuconfig OUR_DRIVER
 	  sensor_sample_fetch() samples the pin level and sensor_channel_get()
 	  turns the LED on or off accordingly. The extra API our_driver_toggle()
 	  flips the LED and counts the toggles.
+
+config OUR_DRIVER_SHELL
+	bool "Our Custom Driver shell"
+	depends on OUR_DRIVER
+	select SHELL
+	help
+	  Add the "sensorroot" shell command to exercise the driver from a
+	  serial console: "fetch" calls sensor_sample_fetch(), "read" calls
+	  sensor_channel_get(), "info" prints the device name and ready state.

@@ -48,11 +48,28 @@ sensor_channel_get(dev, (enum sensor_channel)OUR_DRIVER_CHAN_TOGGLE_COUNT, &val)
 `data->toggle_count`, so a failed GPIO write leaves the driver state consistent.
 The app drives a heartbeat at `CONFIG_APP_HEARTBEAT_PERIOD_MS` (app `Kconfig`).
 
+## Shell command (home task 7/1)
+
+With `CONFIG_OUR_DRIVER_SHELL=y` the module registers the root command
+`sensorroot`, so the driver can be exercised from a serial console:
+
+```text
+uart:~$ sensorroot info      device name and ready state
+uart:~$ sensorroot fetch     calls sensor_sample_fetch()
+uart:~$ sensorroot read      calls sensor_channel_get(SENSOR_CHAN_PROX) and prints it
+```
+
+`fetch` must run before `read`, because `read` reports the value stored by the
+last fetch. Both first check `device_is_ready()` and print an error otherwise.
+The shell front end lives in `drivers/our_driver/our_driver_shell.c` and is
+only compiled when `CONFIG_OUR_DRIVER_SHELL` is set.
+
 ## Wiring
 
 - `app/CMakeLists.txt` appends the module to `ZEPHYR_EXTRA_MODULES`.
 - `app/app.overlay` creates the `led_sensor` node with `compatible = "our,driver"`.
-- `app/prj.conf` sets `CONFIG_OUR_DRIVER=y` and `CONFIG_SENSOR=y`.
+- `app/prj.conf` sets `CONFIG_OUR_DRIVER=y`, `CONFIG_SENSOR=y` and the shell
+  options.
 
 ## Build
 
