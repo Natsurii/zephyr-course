@@ -161,6 +161,35 @@ static int our_driver_toggle_impl(const struct device *dev)
 	return 0;
 }
 
+int our_driver_set(const struct device *dev, uint8_t value)
+{
+	const struct our_driver_api *api = (const struct our_driver_api *)dev->api;
+
+	return api->set(dev, value);
+}
+
+static int our_driver_set_impl(const struct device *dev, uint8_t value)
+{
+	struct our_driver_data *data = dev->data;
+	int ret;
+
+	if (value > 1U) {
+		return -EINVAL;
+	}
+
+	/* Same order as toggle(): the pin is driven before the state changes. */
+	ret = our_driver_internal_write(dev, value != 0U);
+	if (ret < 0) {
+		LOG_ERR("write failed (%d), state unchanged", ret);
+		return ret;
+	}
+
+	data->sampled = value;
+
+	LOG_DBG("set to %u", value);
+	return 0;
+}
+
 /* Registered API table: standard sensor entry points plus the custom one. */
 static const struct our_driver_api our_driver_api = {
 	.sensor = {
@@ -168,6 +197,7 @@ static const struct our_driver_api our_driver_api = {
 		.channel_get = our_driver_channel_get,
 	},
 	.toggle = our_driver_toggle_impl,
+	.set = our_driver_set_impl,
 };
 
 static int our_driver_init(const struct device *dev)

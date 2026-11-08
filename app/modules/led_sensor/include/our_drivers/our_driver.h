@@ -49,6 +49,20 @@ enum our_driver_channel {
  */
 int our_driver_toggle(const struct device *dev);
 
+/**
+ * @brief Drive the LED to an explicit level.
+ *
+ * Extension API used by ``sensorroot set``. Unlike sensor_channel_get(), which
+ * only replays the last sampled value, this writes an arbitrary level right
+ * away and makes it the new driver state.
+ *
+ * @param dev Pointer to the device.
+ * @param value 0 turns the LED off, 1 turns it on.
+ * @return 0 on success, -EINVAL if @p value is not 0 or 1, or a negative errno
+ *         from the GPIO write. The state is left unchanged on failure.
+ */
+int our_driver_set(const struct device *dev, uint8_t value);
+
 /** @cond INTERNAL_HIDDEN */
 
 /**
@@ -62,6 +76,9 @@ struct our_driver_api {
 
 	/** Toggle the LED; backs our_driver_toggle(). */
 	int (*toggle)(const struct device *dev);
+
+	/** Drive an explicit level; backs our_driver_set(). */
+	int (*set)(const struct device *dev, uint8_t value);
 };
 
 /** @endcond */
